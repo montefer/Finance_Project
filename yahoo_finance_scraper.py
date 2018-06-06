@@ -2,21 +2,48 @@ import urllib.request
 import requests
 import re
 import datetime
+import time
+import csv
+
+def convert_time_from_unix(timestamp):
+    date = datetime.datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d')
+    return date
 
 
-def convert_time(timestamp):
-    print(datetime.datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d %H:%M:%S'))
+def convert_time_to_unix(timestamp):
+    try:
+        unix_time = int(time.mktime(datetime.datetime.strptime(timestamp, "%Y-%m-%d").timetuple()))
+    except OSError:
+        unix_time = int(time.mktime(datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").timetuple()))
+    return str(unix_time)
 
 
 def stock_numbers(data):
     data = re.split('(\-\d+\.\d+|\d+\.\d+|^[0-9]*$|\d+)', str(data))
     return [x for x in data if x.isdigit() or re.match("^\d+?\.\d+?$",x)]
 
-page_url = 'https://finance.yahoo.com/quote/GOOG/history?period1=1370404800&period2=1528171200&interval=1d&filter=history&frequency=1d'
+
+ticker = input('Please input stock ticker: ').upper()
+
+period1 = convert_time_to_unix(input('Please input start date (YYYY-MM-DD): '))
+period2 = convert_time_to_unix(input('Please input end date (YYYY-MM-DD): '))
+
+
+
+
+page_url = 'https://finance.yahoo.com/quote/'+ticker+'/history?period1='+period1+'&period2='+period2+'&interval=1d&filter=history&frequency=1d'
+
+
+
+
 
 page = requests.get(page_url)
 
 print(page)
+i=0
+
+header = ['Date','Open','High','Low','Close','Volume','Adjusted Close']
+split_header = ['Date','Numerator','Denominator','splitRatio']
 
 with urllib.request.urlopen(page_url) as f:
     html = f.read().decode('utf-8')
@@ -25,8 +52,28 @@ with urllib.request.urlopen(page_url) as f:
     stock_info =html[price_table_start:price_table_end]
     stock_data = re.findall('\{(.*?)\}',stock_info)
 
-    numbers_list = stock_numbers(stock_data[0:2])   #will give: date(UNIX timestamp), open, high,
-                                                        #low, close, adjusted close, volume (in that order)
-    print(numbers_list)
+    numbers_list = stock_numbers(stock_data)    #will give: date(UNIX timestamp), open, high,
+                                                #low, close, volume, adjusted close (in that order)
+    #print(numbers_list)
 
+    with open('yahoo_stock_info.csv', 'a') as myfile:
+        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        wr.writerow(header)
+        for item in stock_data:
+            if re.match("^\d+?\.\d+?$", numbers_list[i+1]):
+                date = convert_time_from_unix(numbers_list[i])
+                stock_information = numbers_list[i+1:i+7]
+                stock_information.insert(0,date)
+                wr.writerow(stock_information)
+                i+=7
+            else:
+                date = convert_time_from_unix(numbers_list[i])
+                numerator = numbers_list[i+1]
+                denominator = numbers_list[i+2]
+                split_ratio = float(numbers_list[i+3])/float(numbers_list[i+5])
+                stock_split = [date, numerator, denominator, split_ratio]
+                wr.writerow(split_header)
+                wr.writerow(stock_split)
+                i+=9
+            
     
