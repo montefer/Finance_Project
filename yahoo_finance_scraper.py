@@ -67,7 +67,6 @@ with urllib.request.urlopen(page_url) as f:
         wr.writerow(header)
 
         for item in stock_data:
-            #print(item)
             if "DIVIDEND" in item:
                 print('Contains dividend!')
                 date = convert_time_from_unix(numbers_list[i+1])
@@ -95,31 +94,9 @@ with urllib.request.urlopen(page_url) as f:
 
                 
             else:           #if re.match("^\d+?\.\d+?$", numbers_list[i+1]) or re.match("^\d+?\.\d+?$", numbers_list[i+2]) or re.match("^\d+?\.\d+?$", numbers_list[i+3]) or re.match("^\d+?\.\d+?$", numbers_list[i+4]):
-                #print(item)
-                print('lol!')
+
                 date = convert_time_from_unix(numbers_list[i])
                 stock_information = numbers_list[i+1:i+7]
                 stock_information.insert(0,date)
                 wr.writerow(stock_information)
-                i+=7
-                #print(stock_information)
-            #else:
-             #   date = convert_time_from_unix(numbers_list[i])
-
- #               stock_information = numbers_list[i+1:i+7]
-  #              stock_information.insert(0,date)
-
-   #             print(stock_information)
-
-
-
-                
-            #    numerator = numbers_list[i+1]
-           #     denominator = numbers_list[i+2]
-          #      split_ratio = float(numbers_list[i+3])/float(numbers_list[i+5])
-         #       stock_split = [date, numerator, denominator, split_ratio]
-        #        wr.writerow(split_header)
-       #         wr.writerow(stock_split)
-      #          i+=9
-            
-    
+                i+=7    
