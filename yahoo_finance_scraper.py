@@ -43,13 +43,19 @@ print(page)
 i=0
 
 header = ['Date','Open','High','Low','Close','Volume','Adjusted Close']
-split_header = ['Date','Numerator','Denominator','splitRatio']
+split_header = ['Date','Numerator','Denominator','splitRatio','Type']
+dividend_header = ['Date','Amount','Type']
 
 with urllib.request.urlopen(page_url) as f:
     html = f.read().decode('utf-8')
     price_table_start = html.find('HistoricalPriceStore')
     price_table_end = html.find('eventsData')
-    stock_info =html[price_table_start:price_table_end]
+
+
+    html = html[price_table_start:price_table_end]
+    price_table_start = html.find('prices')
+    
+    stock_info = html[price_table_start:price_table_end]
     stock_data = re.findall('\{(.*?)\}',stock_info)
 
     numbers_list = stock_numbers(stock_data)    #will give: date(UNIX timestamp), open, high,
@@ -59,21 +65,61 @@ with urllib.request.urlopen(page_url) as f:
     with open('yahoo_stock_info.csv', 'a') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(header)
+
         for item in stock_data:
-            if re.match("^\d+?\.\d+?$", numbers_list[i+1]):
+            #print(item)
+            if "DIVIDEND" in item:
+                print('Contains dividend!')
+                date = convert_time_from_unix(numbers_list[i+1])
+                dividend = [date,numbers_list[i],'DIVIDEND']
+                wr.writerow(dividend_header)
+                wr.writerow(dividend)
+                i+=3
+
+
+
+
+
+            elif "SPLIT" in item:
+                print('Contains stock split!')
+                date = convert_time_from_unix(numbers_list[i])
+                numerator = numbers_list[i+1]
+                denominator = numbers_list[i+2]
+                split_ratio = float(numbers_list[i+3])/float(numbers_list[i+5])
+                stock_split = [date, numerator, denominator, split_ratio,'SPLIT']
+                wr.writerow(split_header)
+                wr.writerow(stock_split)
+                i+=9
+
+
+
+                
+            else:           #if re.match("^\d+?\.\d+?$", numbers_list[i+1]) or re.match("^\d+?\.\d+?$", numbers_list[i+2]) or re.match("^\d+?\.\d+?$", numbers_list[i+3]) or re.match("^\d+?\.\d+?$", numbers_list[i+4]):
+                #print(item)
+                print('lol!')
                 date = convert_time_from_unix(numbers_list[i])
                 stock_information = numbers_list[i+1:i+7]
                 stock_information.insert(0,date)
                 wr.writerow(stock_information)
                 i+=7
-            else:
-                date = convert_time_from_unix(numbers_list[i])
-                numerator = numbers_list[i+1]
-                denominator = numbers_list[i+2]
-                split_ratio = float(numbers_list[i+3])/float(numbers_list[i+5])
-                stock_split = [date, numerator, denominator, split_ratio]
-                wr.writerow(split_header)
-                wr.writerow(stock_split)
-                i+=9
+                #print(stock_information)
+            #else:
+             #   date = convert_time_from_unix(numbers_list[i])
+
+ #               stock_information = numbers_list[i+1:i+7]
+  #              stock_information.insert(0,date)
+
+   #             print(stock_information)
+
+
+
+                
+            #    numerator = numbers_list[i+1]
+           #     denominator = numbers_list[i+2]
+          #      split_ratio = float(numbers_list[i+3])/float(numbers_list[i+5])
+         #       stock_split = [date, numerator, denominator, split_ratio]
+        #        wr.writerow(split_header)
+       #         wr.writerow(stock_split)
+      #          i+=9
             
     
