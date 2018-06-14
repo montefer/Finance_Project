@@ -70,9 +70,10 @@ def get_eps_data(timestamp):
                         wr.writerow(eps_info)
                         i+=3
             else:
-                wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-                for date in dates:
-                    wr.writerow([date])
+                with open('wayback_test.csv', 'a') as myfile:
+                    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+                    for date in dates:
+                        wr.writerow([date])
                         
             if timestamp%100>0:
                 timestamp-=3
