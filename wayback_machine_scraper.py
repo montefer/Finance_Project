@@ -28,15 +28,19 @@ def get_eps_data(timestamp):
     while timestamp>=201000:
 
         page = requests.get('http://archive.org/wayback/available?url='+stock_url+'&timestamp='+str(timestamp))
+        #print(page.json()['archived_snapshots']['closest']['url'])
         #print(page.json())
-        page_url = page.json()['archived_snapshots']['closest']['url']
-        #print('\nClosest Url Snapshot:',page_url,'\n')
+        try:
+            page_url = page.json()['archived_snapshots']['closest']['url']
+        except KeyError:
+            print('Failure!')
+            #print('\nClosest Url Snapshot:',page_url,'\n')
 
 
         
         with urllib.request.urlopen(page_url) as f:
             html = f.read().decode('utf-8')
-            table_title = html.find('Quarterly')
+            table_title = html.find('Quarterly Earnings Surprise History')
     
             eps_table = html[table_title+350:table_title+2100]
             split_table = re.split('<|>| ',eps_table)
@@ -45,7 +49,7 @@ def get_eps_data(timestamp):
             dates = []
 
             j=0
-
+            #print(eps_table)
             for num in split_table:
                 if re.findall('\-\d+\.\d+|\d+\.\d+|^[0-9]*$',num):
                     numbers.append(re.findall('\-\d+\.\d+|\d+\.\d+|^[0-9]*$',num)[0])
@@ -62,7 +66,7 @@ def get_eps_data(timestamp):
             i=0
 
             if len(numbers)==12:
-                with open('wayback_test.csv', 'a') as myfile:
+                with open('wayback_scrape.csv', 'a', newline='') as myfile:
                     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                     for date in dates:
                         eps_info = numbers[i:i+3]
@@ -70,7 +74,7 @@ def get_eps_data(timestamp):
                         wr.writerow(eps_info)
                         i+=3
             else:
-                with open('wayback_test.csv', 'a') as myfile:
+                with open('wayback_scrape.csv', 'a', newline='') as myfile:
                     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                     for date in dates:
                         wr.writerow([date])
@@ -83,12 +87,12 @@ def get_eps_data(timestamp):
             #print(dates)
 
 def del_dup_rows(file):
-    with open(file,'r') as f, open('wayback_clean.csv','w') as out_file:
+    with open(file,'r') as f, open('wayback_scrape_clean.csv','w') as out_file:
         out_file.writelines(unique_everseen(f))
 
 
 get_eps_data(timestamp)
-del_dup_rows('wayback_test.csv')
+del_dup_rows('wayback_clean.csv')
 
 
 
